@@ -13,46 +13,42 @@ void xbee_rx(void);
 void reply_messange(char *xbee_reply, char *messange);
 void check_addr(char *xbee_reply, char *messenger);
 void acceDisplay(Arguments *in, Reply *out);
-RPCFunction rpcMove(&acceDisplay, "acceDisplay");
-void acceDisplay(Arguments *in, Reply *out){
-  float x,y,z;
-  accelerometer(x,y,z);
-  pc.printf("(%f,%f,%f)",x,y,z);
+RPCFunction rpc(&state, "state");
+void state(Arguments *in, Reply *out){
+  pc.printf("%d",);
 }
 Thread accThread,exT;
 Queue exQ;
 accThread.start(&sample);
 exT.start(callback(&exQ, &EventQueue::dispatch_forever));
-float data[4][10];
+//float data[4][10];
 int dataCount=0;
-float tempData[4];
-void storeData();
+void outputAcc(float x,y,z,t){
+  dataCount++;
+}
 void sample(){
     bool tilt=false;
+    float x,y,z;
     Timer _t;
     _t.start();
+    accelerometer(x,y,z);
     while(1){
-        accelerometer(x,y,z);
-        if((X*x+y*y)>2&&tilt==false){//tilt over 45
-            tilt=true;
-            Timer _t1;
-            _t1.start();
-            exQ.call_every(100,storeData);
-            while(_t1<=1){}
-
+        if((x*x+y*y)>2&&tilt==false){//tilt over 45
+          tilt=true;
+          for(int i=0;i<10;i++){
+            outputAcc(x,y,z,_t.read());
+            wait(0.1);
+            accelerometer(x,y,z);
+          }
         }else{
+          if((x*x+y*y)<2){
             tilt=false;
+          }
+          outputAcc(x,y,z,_t.read());
+          wait(0.5);
+          accelerometer(x,y,z);
         }
-        wait(0.05);
     } 
-}
-void storeData(){
-    if(dataCount<10){
-        data[4][dataCount]=tempData;
-        dataCount++;
-    }else{
-        printf("data full");
-    }
 }
 
 
